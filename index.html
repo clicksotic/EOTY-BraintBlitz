@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EOTY Quiz - Presented by Clicksotic</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="brand-header">
+                    <h1><i class="fas fa-trophy"></i> EOTY Quiz</h1>
+                    <div class="presented-by">Presented by Clicksotic</div>
+                </div>
+                <div class="current-team-indicator" id="currentTeamIndicator">
+                    <span class="team-label" id="teamLabel">Current Team:</span>
+                    <span class="team-name" id="currentTeamName">-</span>
+                </div>
+                <div class="clicksotic-branding">
+                    <img src="./clicksoticlogo-removebg-preview (1).png" alt="Clicksotic Logo" class="logo-img">
+                    <span class="clicksotic-text">Clicksotic</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Setup Section -->
+            <section class="setup-section" id="setupSection">
+                <div class="setup-card">
+                    <div class="setup-header">
+                        <h2><i class="fas fa-cog"></i> Quiz Setup</h2>
+                        <div class="clicksotic-branding">
+                            <span>Hosted by Clicksotic</span>
+                        </div>
+                    </div>
+                    <div class="setup-form">
+                        <div class="form-group">
+                            <label for="teamsDocUrl">Teams Sheet URL:</label>
+                            <input type="url" id="teamsDocUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                            <small>Share your Google Sheet with "Anyone with the link can view"</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="questionsDocUrl">Questions Sheet URL:</label>
+                            <input type="url" id="questionsDocUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                            <small>Share your Google Sheet with "Anyone with the link can view"</small>
+                        </div>
+                        <button class="btn btn-primary" id="startQuizBtn">
+                            <i class="fas fa-play"></i> Start Quiz
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quiz Section -->
+            <section class="quiz-section" id="quizSection" style="display: none;">
+                <div class="quiz-container">
+                    <div class="question-card">
+                        <div class="question-header">
+                            <span class="question-number" id="questionNumber">Question 1</span>
+                            <span class="question-points" id="questionPoints">10 points</span>
+                        </div>
+                        <div class="question-content">
+                            <h3 id="questionText">Loading question...</h3>
+                        </div>
+                        <div class="answer-section">
+                            <div class="answer-options" id="answerOptions">
+                                <!-- Answer options will be populated here -->
+                            </div>
+                        </div>
+                        <div class="question-actions">
+                            <button class="btn btn-secondary" id="skipQuestionBtn">
+                                <i class="fas fa-forward"></i> Skip Question
+                            </button>
+                            <button class="btn btn-primary" id="submitAnswerBtn" disabled>
+                                <i class="fas fa-check"></i> Submit Answer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-container">
+                    <div class="results-header">
+                        <h2><i class="fas fa-flag-checkered"></i> Quiz Complete!</h2>
+                        <div class="clicksotic-branding">
+                            <span>Hosted by Clicksotic</span>
+                        </div>
+                    </div>
+                    <div class="final-scores">
+                        <h3>Final Scores</h3>
+                        <div class="leaderboard" id="finalLeaderboard">
+                            <!-- Final leaderboard will be populated here -->
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="restartQuizBtn">
+                        <i class="fas fa-redo"></i> Start New Quiz
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-content">
+                <h3><i class="fas fa-trophy"></i> Leaderboard</h3>
+                <div class="leaderboard" id="leaderboard">
+                    <!-- Leaderboard will be populated here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Answer Feedback Modal -->
+        <div class="modal" id="answerModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Answer Result</h3>
+                    <button class="close-btn" id="closeModalBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="answer-result" id="answerResult">
+                        <!-- Answer result will be shown here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="nextQuestionBtn">
+                        <i class="fas fa-arrow-right"></i> Next Question
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading quiz data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
