@@ -11,6 +11,10 @@ class QuizMaster {
         this.isQuizActive = false;
         this.currentSection = 'setup'; // Track current section
         this.questionsPerTeam = 0; // Number of questions per team
+        this.timer = null; // Timer reference
+        this.timerDuration = 30; // Default timer duration in seconds
+        this.timeLeft = 30; // Time left in seconds
+        this.timerInterval = null; // Timer interval reference
         
         this.initializeApp();
     }
@@ -40,11 +44,22 @@ class QuizMaster {
     async startQuiz() {
         const teamsUrl = document.getElementById('teamsDocUrl').value;
         const questionsUrl = document.getElementById('questionsDocUrl').value;
+        const timerDuration = parseInt(document.getElementById('timerDuration').value);
 
         if (!teamsUrl || !questionsUrl) {
             alert('Please provide both document URLs');
             return;
         }
+
+        // Validate timer duration
+        if (isNaN(timerDuration) || timerDuration < 5 || timerDuration > 300) {
+            alert('Please enter a valid timer duration between 5 and 300 seconds');
+            return;
+        }
+
+        // Set timer duration
+        this.timerDuration = timerDuration;
+        this.timeLeft = timerDuration;
 
         this.showLoading(true);
         
@@ -302,6 +317,9 @@ class QuizMaster {
         // Reset state
         this.selectedAnswer = null;
         document.getElementById('submitAnswerBtn').disabled = true;
+        
+        // Start timer for this question
+        this.startTimer();
     }
 
     selectAnswer(index) {
@@ -319,6 +337,9 @@ class QuizMaster {
 
     submitAnswer() {
         if (this.selectedAnswer === null) return;
+        
+        // Stop the timer
+        this.stopTimer();
         
         const currentTeamQuestions = this.teamQuestions[this.currentTeamIndex];
         const question = currentTeamQuestions[this.currentQuestionIndex];
@@ -364,6 +385,9 @@ class QuizMaster {
     nextQuestion() {
         this.closeModal();
         
+        // Stop any running timer
+        this.stopTimer();
+        
         // Move to next question for current team
         this.currentQuestionIndex++;
         
@@ -397,6 +421,9 @@ class QuizMaster {
     }
 
     skipQuestion() {
+        // Stop the timer
+        this.stopTimer();
+        
         // Move to next question for current team
         this.currentQuestionIndex++;
         
@@ -501,10 +528,16 @@ class QuizMaster {
         this.scores = {};
         this.selectedAnswer = null;
         this.isQuizActive = false;
+        this.timerDuration = 30;
+        this.timeLeft = 30;
+        
+        // Stop any running timer
+        this.stopTimer();
         
         // Clear form inputs
         document.getElementById('teamsDocUrl').value = '';
         document.getElementById('questionsDocUrl').value = '';
+        document.getElementById('timerDuration').value = '30';
         
         // Clear saved state
         this.clearState();
@@ -532,7 +565,9 @@ class QuizMaster {
             currentTeamIndex: this.currentTeamIndex,
             currentQuestionIndex: this.currentQuestionIndex,
             scores: this.scores,
-            isQuizActive: this.isQuizActive
+            isQuizActive: this.isQuizActive,
+            timerDuration: this.timerDuration,
+            timeLeft: this.timeLeft
         };
         localStorage.setItem('eotyQuizState', JSON.stringify(state));
     }
@@ -551,6 +586,8 @@ class QuizMaster {
                 this.currentQuestionIndex = state.currentQuestionIndex || 0;
                 this.scores = state.scores || {};
                 this.isQuizActive = state.isQuizActive || false;
+                this.timerDuration = state.timerDuration || 30;
+                this.timeLeft = state.timeLeft || this.timerDuration;
                 
                 // If we have quiz data, restore the UI
                 if (this.teams.length > 0) {
@@ -583,6 +620,95 @@ class QuizMaster {
 
     clearState() {
         localStorage.removeItem('eotyQuizState');
+    }
+
+    // Timer Methods
+    startTimer() {
+        this.timeLeft = this.timerDuration;
+        this.updateTimerDisplay();
+        this.updateTimerStyle();
+        
+        this.timerInterval = setInterval(() => {
+            this.timeLeft--;
+            this.updateTimerDisplay();
+            this.updateTimerStyle();
+            
+            if (this.timeLeft <= 0) {
+                this.timerExpired();
+            }
+        }, 1000);
+    }
+
+    stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    resetTimer() {
+        this.stopTimer();
+        this.timeLeft = this.timerDuration;
+        this.updateTimerDisplay();
+        this.updateTimerStyle();
+    }
+
+    updateTimerDisplay() {
+        const timerText = document.getElementById('timerText');
+        if (timerText) {
+            timerText.textContent = this.timeLeft;
+        }
+    }
+
+    updateTimerStyle() {
+        const timerCircle = document.getElementById('timerCircle');
+        if (timerCircle) {
+            // Remove all timer classes
+            timerCircle.classList.remove('warning', 'danger');
+            
+            // Calculate warning thresholds based on timer duration
+            const dangerThreshold = Math.max(1, Math.floor(this.timerDuration * 0.1)); // 10% of total time
+            const warningThreshold = Math.max(2, Math.floor(this.timerDuration * 0.25)); // 25% of total time
+            
+            // Add appropriate class based on time left
+            if (this.timeLeft <= dangerThreshold) {
+                timerCircle.classList.add('danger');
+            } else if (this.timeLeft <= warningThreshold) {
+                timerCircle.classList.add('warning');
+            }
+        }
+    }
+
+    timerExpired() {
+        this.stopTimer();
+        
+        // Mark question as incorrect due to timeout
+        const currentTeamQuestions = this.teamQuestions[this.currentTeamIndex];
+        const question = currentTeamQuestions[this.currentQuestionIndex];
+        
+        // Show timeout feedback
+        this.showTimeoutFeedback(question);
+        
+        // Auto-advance after showing feedback
+        setTimeout(() => {
+            this.nextQuestion();
+        }, 2000);
+    }
+
+    showTimeoutFeedback(question) {
+        const modal = document.getElementById('answerModal');
+        const resultDiv = document.getElementById('answerResult');
+        
+        resultDiv.className = 'answer-result timeout';
+        resultDiv.innerHTML = `
+            <i class="fas fa-clock"></i>
+            <h4>Time's Up!</h4>
+            <p>You ran out of time for this question.</p>
+            <p>The correct answer was: <strong>${question.options[question.correctAnswer]}</strong></p>
+            <p><small>Moving to next question in 2 seconds...</small></p>
+        `;
+        
+        modal.classList.add('show');
     }
 }
 

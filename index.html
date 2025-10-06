@@ -14,7 +14,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="brand-header">
-                    <h1><i class="fas fa-trophy"></i> EOTY Quiz</h1>
+                    <h1><i class="fas fa-trophy"></i> Brain Blitz</h1>
                     <div class="presented-by">Presented by Clicksotic</div>
                 </div>
                 <div class="current-team-indicator" id="currentTeamIndicator">
@@ -50,6 +50,11 @@
                             <input type="url" id="questionsDocUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
                             <small>Share your Google Sheet with "Anyone with the link can view"</small>
                         </div>
+                        <div class="form-group">
+                            <label for="timerDuration">Timer Duration (seconds):</label>
+                            <input type="number" id="timerDuration" placeholder="30" min="5" max="300" value="30">
+                            <small>Set how many seconds each team has to answer each question (5-300 seconds)</small>
+                        </div>
                         <button class="btn btn-primary" id="startQuizBtn">
                             <i class="fas fa-play"></i> Start Quiz
                         </button>
@@ -63,6 +68,11 @@
                     <div class="question-card">
                         <div class="question-header">
                             <span class="question-number" id="questionNumber">Question 1</span>
+                            <div class="timer-container">
+                                <div class="timer-circle" id="timerCircle">
+                                    <span class="timer-text" id="timerText">30</span>
+                                </div>
+                            </div>
                             <span class="question-points" id="questionPoints">10 points</span>
                         </div>
                         <div class="question-content">
