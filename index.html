@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EOTY Quiz - Presented by ClickSotic</title>
+    <title>EOTY Quiz - Presented by Clicksotic</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -15,7 +15,7 @@
             <div class="header-content">
                 <div class="brand-header">
                     <h1><i class="fas fa-trophy"></i> Brain Blitz</h1>
-                    <div class="presented-by">Presented by ClickSotic</div>
+                    <div class="presented-by">Presented by Clicksotic</div>
                 </div>
                 <div class="current-team-indicator" id="currentTeamIndicator">
                     <span class="team-label" id="teamLabel">Current Team:</span>
@@ -23,7 +23,7 @@
                 </div>
                 <div class="clicksotic-branding">
                     <img src="./clicksoticlogo-removebg-preview (1).png" alt="Clicksotic Logo" class="logo-img">
-                    <span class="clicksotic-text">ClickSotic</span>
+                    <span class="clicksotic-text">Clicksotic</span>
                 </div>
             </div>
         </header>
@@ -36,7 +36,7 @@
                     <div class="setup-header">
                         <h2><i class="fas fa-cog"></i> Quiz Setup</h2>
                         <div class="clicksotic-branding">
-                            <span>Hosted by ClickSotic</span>
+                            <span>Hosted by Clicksotic</span>
                         </div>
                     </div>
                     <div class="setup-form">
@@ -87,6 +87,9 @@
                             <button class="btn btn-secondary" id="skipQuestionBtn">
                                 <i class="fas fa-forward"></i> Skip Question
                             </button>
+                            <button class="btn btn-timer" id="startTimerBtn">
+                                <i class="fas fa-play"></i> Start Timer
+                            </button>
                             <button class="btn btn-primary" id="submitAnswerBtn" disabled>
                                 <i class="fas fa-check"></i> Submit Answer
                             </button>
@@ -101,7 +104,7 @@
                     <div class="results-header">
                         <h2><i class="fas fa-flag-checkered"></i> Quiz Complete!</h2>
                         <div class="clicksotic-branding">
-                            <span>Hosted by ClickSotic</span>
+                            <span>Hosted by Clicksotic</span>
                         </div>
                     </div>
                     <div class="final-scores">
@@ -154,10 +157,16 @@
                 <p>Loading quiz data...</p>
             </div>
         </div>
+
+        <!-- Floating Restart Button -->
+        <div class="floating-restart" id="floatingRestart" style="display: none;">
+            <button class="floating-btn" id="floatingRestartBtn" title="Start New Quiz">
+                <i class="fas fa-redo"></i>
+            </button>
+        </div>
     </div>
 
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-

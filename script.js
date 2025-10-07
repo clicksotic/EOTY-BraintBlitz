@@ -15,14 +15,60 @@ class QuizMaster {
         this.timerDuration = 30; // Default timer duration in seconds
         this.timeLeft = 30; // Time left in seconds
         this.timerInterval = null; // Timer interval reference
+        this.timerStarted = false; // Track if timer has been manually started
+        
+        // Audio context for tick sounds
+        this.audioContext = null;
+        this.tickSound = null;
+        this.aggressiveTickSound = null;
         
         this.initializeApp();
     }
 
     initializeApp() {
         this.setupEventListeners();
+        this.initializeAudio();
         this.loadState();
         this.showCurrentSection();
+    }
+
+    initializeAudio() {
+        try {
+            // Create audio context for tick sounds
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (error) {
+            console.warn('Audio context not supported:', error);
+        }
+    }
+
+    playTickSound(aggressive = false) {
+        if (!this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            if (aggressive) {
+                // Aggressive tick for last 3 seconds
+                oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime + 0.05);
+                gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+            } else {
+                // Normal tick sound
+                oscillator.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+            }
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.1);
+        } catch (error) {
+            console.warn('Error playing tick sound:', error);
+        }
     }
 
     setupEventListeners() {
@@ -33,12 +79,14 @@ class QuizMaster {
         document.getElementById('submitAnswerBtn').addEventListener('click', () => this.submitAnswer());
         document.getElementById('skipQuestionBtn').addEventListener('click', () => this.skipQuestion());
         document.getElementById('nextQuestionBtn').addEventListener('click', () => this.nextQuestion());
+        document.getElementById('startTimerBtn').addEventListener('click', () => this.startTimer());
         
         // Modal controls
         document.getElementById('closeModalBtn').addEventListener('click', () => this.closeModal());
         
         // Restart quiz
         document.getElementById('restartQuizBtn').addEventListener('click', () => this.restartQuiz());
+        document.getElementById('floatingRestartBtn').addEventListener('click', () => this.startNewQuiz());
     }
 
     async startQuiz() {
@@ -248,6 +296,7 @@ class QuizMaster {
         document.getElementById('quizSection').style.display = 'none';
         document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('floatingRestart').style.display = 'none';
         this.saveState();
     }
 
@@ -257,6 +306,7 @@ class QuizMaster {
         document.getElementById('quizSection').style.display = 'block';
         document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('sidebar').style.display = 'block';
+        document.getElementById('floatingRestart').style.display = 'block';
         this.saveState();
     }
 
@@ -266,6 +316,7 @@ class QuizMaster {
         document.getElementById('quizSection').style.display = 'none';
         document.getElementById('resultsSection').style.display = 'block';
         document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('floatingRestart').style.display = 'none';
         this.saveState();
     }
 
@@ -318,8 +369,14 @@ class QuizMaster {
         this.selectedAnswer = null;
         document.getElementById('submitAnswerBtn').disabled = true;
         
-        // Start timer for this question
-        this.startTimer();
+        // Reset timer state for new question
+        this.timerStarted = false;
+        this.timeLeft = this.timerDuration;
+        this.updateTimerDisplay();
+        this.updateTimerStyle();
+        this.updateStartTimerButton();
+        
+        // Don't auto-start timer - wait for manual start
     }
 
     selectAnswer(index) {
@@ -530,6 +587,7 @@ class QuizMaster {
         this.isQuizActive = false;
         this.timerDuration = 30;
         this.timeLeft = 30;
+        this.timerStarted = false;
         
         // Stop any running timer
         this.stopTimer();
@@ -542,6 +600,36 @@ class QuizMaster {
         // Clear saved state
         this.clearState();
         
+        this.showSetupSection();
+    }
+
+    startNewQuiz() {
+        // Stop any running timer
+        this.stopTimer();
+        
+        // Clear saved state
+        this.clearState();
+        
+        // Reset all quiz data
+        this.teams = [];
+        this.questions = [];
+        this.teamQuestions = [];
+        this.questionsPerTeam = 0;
+        this.currentTeamIndex = 0;
+        this.currentQuestionIndex = 0;
+        this.scores = {};
+        this.selectedAnswer = null;
+        this.isQuizActive = false;
+        this.timerDuration = 30;
+        this.timeLeft = 30;
+        this.timerStarted = false;
+        
+        // Clear form inputs
+        document.getElementById('teamsDocUrl').value = '';
+        document.getElementById('questionsDocUrl').value = '';
+        document.getElementById('timerDuration').value = '30';
+        
+        // Go back to setup
         this.showSetupSection();
     }
 
@@ -567,7 +655,8 @@ class QuizMaster {
             scores: this.scores,
             isQuizActive: this.isQuizActive,
             timerDuration: this.timerDuration,
-            timeLeft: this.timeLeft
+            timeLeft: this.timeLeft,
+            timerStarted: this.timerStarted
         };
         localStorage.setItem('eotyQuizState', JSON.stringify(state));
     }
@@ -588,11 +677,15 @@ class QuizMaster {
                 this.isQuizActive = state.isQuizActive || false;
                 this.timerDuration = state.timerDuration || 30;
                 this.timeLeft = state.timeLeft || this.timerDuration;
+                this.timerStarted = state.timerStarted || false;
                 
                 // If we have quiz data, restore the UI
                 if (this.teams.length > 0) {
                     this.updateCurrentTeamIndicator();
                     this.updateLeaderboard();
+                    this.updateTimerDisplay();
+                    this.updateTimerStyle();
+                    this.updateStartTimerButton();
                 }
                 
                 // If teamQuestions don't exist, recreate them
@@ -624,14 +717,25 @@ class QuizMaster {
 
     // Timer Methods
     startTimer() {
+        if (this.timerStarted) return; // Already started
+        
+        this.timerStarted = true;
         this.timeLeft = this.timerDuration;
         this.updateTimerDisplay();
         this.updateTimerStyle();
+        this.updateStartTimerButton();
         
         this.timerInterval = setInterval(() => {
             this.timeLeft--;
             this.updateTimerDisplay();
             this.updateTimerStyle();
+            
+            // Play tick sound
+            if (this.timeLeft <= 3) {
+                this.playTickSound(true); // Aggressive tick for last 3 seconds
+            } else {
+                this.playTickSound(false); // Normal tick
+            }
             
             if (this.timeLeft <= 0) {
                 this.timerExpired();
@@ -648,9 +752,11 @@ class QuizMaster {
 
     resetTimer() {
         this.stopTimer();
+        this.timerStarted = false;
         this.timeLeft = this.timerDuration;
         this.updateTimerDisplay();
         this.updateTimerStyle();
+        this.updateStartTimerButton();
     }
 
     updateTimerDisplay() {
@@ -664,17 +770,35 @@ class QuizMaster {
         const timerCircle = document.getElementById('timerCircle');
         if (timerCircle) {
             // Remove all timer classes
-            timerCircle.classList.remove('warning', 'danger');
+            timerCircle.classList.remove('warning', 'danger', 'paused');
             
-            // Calculate warning thresholds based on timer duration
-            const dangerThreshold = Math.max(1, Math.floor(this.timerDuration * 0.1)); // 10% of total time
-            const warningThreshold = Math.max(2, Math.floor(this.timerDuration * 0.25)); // 25% of total time
-            
-            // Add appropriate class based on time left
-            if (this.timeLeft <= dangerThreshold) {
-                timerCircle.classList.add('danger');
-            } else if (this.timeLeft <= warningThreshold) {
-                timerCircle.classList.add('warning');
+            if (!this.timerStarted) {
+                // Timer not started yet - show paused state
+                timerCircle.classList.add('paused');
+            } else {
+                // Calculate warning thresholds based on timer duration
+                const dangerThreshold = Math.max(1, Math.floor(this.timerDuration * 0.1)); // 10% of total time
+                const warningThreshold = Math.max(2, Math.floor(this.timerDuration * 0.25)); // 25% of total time
+                
+                // Add appropriate class based on time left
+                if (this.timeLeft <= dangerThreshold) {
+                    timerCircle.classList.add('danger');
+                } else if (this.timeLeft <= warningThreshold) {
+                    timerCircle.classList.add('warning');
+                }
+            }
+        }
+    }
+
+    updateStartTimerButton() {
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        if (startTimerBtn) {
+            if (this.timerStarted) {
+                startTimerBtn.disabled = true;
+                startTimerBtn.innerHTML = '<i class="fas fa-clock"></i> Timer Running';
+            } else {
+                startTimerBtn.disabled = false;
+                startTimerBtn.innerHTML = '<i class="fas fa-play"></i> Start Timer';
             }
         }
     }
