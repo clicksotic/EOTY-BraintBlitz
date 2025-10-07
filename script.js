@@ -80,6 +80,7 @@ class QuizMaster {
         document.getElementById('skipQuestionBtn').addEventListener('click', () => this.skipQuestion());
         document.getElementById('nextQuestionBtn').addEventListener('click', () => this.nextQuestion());
         document.getElementById('startTimerBtn').addEventListener('click', () => this.startTimer());
+        document.getElementById('startNextTeamBtn').addEventListener('click', () => this.startNextTeam());
         
         // Modal controls
         document.getElementById('closeModalBtn').addEventListener('click', () => this.closeModal());
@@ -294,6 +295,7 @@ class QuizMaster {
         this.currentSection = 'setup';
         document.getElementById('setupSection').style.display = 'block';
         document.getElementById('quizSection').style.display = 'none';
+        document.getElementById('teamTransitionSection').style.display = 'none';
         document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('sidebar').style.display = 'none';
         document.getElementById('floatingRestart').style.display = 'none';
@@ -304,9 +306,21 @@ class QuizMaster {
         this.currentSection = 'quiz';
         document.getElementById('setupSection').style.display = 'none';
         document.getElementById('quizSection').style.display = 'block';
+        document.getElementById('teamTransitionSection').style.display = 'none';
         document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('sidebar').style.display = 'block';
         document.getElementById('floatingRestart').style.display = 'block';
+        this.saveState();
+    }
+
+    showTeamTransitionSection() {
+        this.currentSection = 'teamTransition';
+        document.getElementById('setupSection').style.display = 'none';
+        document.getElementById('quizSection').style.display = 'none';
+        document.getElementById('teamTransitionSection').style.display = 'block';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('floatingRestart').style.display = 'none';
         this.saveState();
     }
 
@@ -314,6 +328,7 @@ class QuizMaster {
         this.currentSection = 'results';
         document.getElementById('setupSection').style.display = 'none';
         document.getElementById('quizSection').style.display = 'none';
+        document.getElementById('teamTransitionSection').style.display = 'none';
         document.getElementById('resultsSection').style.display = 'block';
         document.getElementById('sidebar').style.display = 'none';
         document.getElementById('floatingRestart').style.display = 'none';
@@ -324,6 +339,9 @@ class QuizMaster {
         switch(this.currentSection) {
             case 'quiz':
                 this.showQuizSection();
+                break;
+            case 'teamTransition':
+                this.showTeamTransitionSection();
                 break;
             case 'results':
                 this.showResultsSection();
@@ -462,6 +480,29 @@ class QuizMaster {
     }
 
     moveToNextTeam() {
+        // Show team transition screen with current team's score
+        this.showTeamTransitionScreen();
+    }
+
+    showTeamTransitionScreen() {
+        const currentTeam = this.teams[this.currentTeamIndex];
+        const currentTeamScore = this.scores[currentTeam];
+        const nextTeamIndex = this.currentTeamIndex + 1;
+        
+        // Update the transition screen
+        document.getElementById('completedTeamName').textContent = currentTeam;
+        document.getElementById('completedTeamScore').textContent = currentTeamScore;
+        
+        if (nextTeamIndex < this.teams.length) {
+            document.getElementById('nextTeamName').textContent = this.teams[nextTeamIndex];
+        } else {
+            document.getElementById('nextTeamName').textContent = 'All Teams Complete!';
+        }
+        
+        this.showTeamTransitionSection();
+    }
+
+    startNextTeam() {
         // Move to next team
         this.currentTeamIndex++;
         this.currentQuestionIndex = 0; // Reset question index for new team
@@ -474,6 +515,7 @@ class QuizMaster {
         
         this.updateCurrentTeamIndicator();
         this.updateLeaderboard();
+        this.showQuizSection();
         this.displayQuestion();
     }
 
