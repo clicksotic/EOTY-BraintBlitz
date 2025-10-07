@@ -377,7 +377,24 @@ body {
 .question-actions {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 1rem;
+}
+
+.action-buttons-left {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-buttons-right {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-small {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    min-width: 100px;
 }
 
 /* Sidebar */

@@ -17,6 +17,10 @@ class QuizMaster {
         this.timerInterval = null; // Timer interval reference
         this.timerStarted = false; // Track if timer has been manually started
         
+        // Track question answers for go back functionality
+        this.questionAnswers = {}; // Store answers for each question
+        this.questionScores = {}; // Track scores earned for each question
+        
         // Audio context for tick sounds
         this.audioContext = null;
         this.tickSound = null;
@@ -71,6 +75,110 @@ class QuizMaster {
         }
     }
 
+    playCorrectAnswerSound() {
+        if (!this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Pleasant ascending chord for correct answer
+            oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.2); // G5
+            
+            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.5);
+        } catch (error) {
+            console.warn('Error playing correct answer sound:', error);
+        }
+    }
+
+    playIncorrectAnswerSound() {
+        if (!this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Descending tone for incorrect answer
+            oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4
+            oscillator.frequency.setValueAtTime(392, this.audioContext.currentTime + 0.1); // G4
+            oscillator.frequency.setValueAtTime(349.23, this.audioContext.currentTime + 0.2); // F4
+            
+            gainNode.gain.setValueAtTime(0.25, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.4);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.4);
+        } catch (error) {
+            console.warn('Error playing incorrect answer sound:', error);
+        }
+    }
+
+    playTeamScoreSound() {
+        if (!this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Triumphant fanfare for team score
+            oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.2); // G5
+            oscillator.frequency.setValueAtTime(1046.5, this.audioContext.currentTime + 0.3); // C6
+            
+            gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.8);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.8);
+        } catch (error) {
+            console.warn('Error playing team score sound:', error);
+        }
+    }
+
+    playLeaderboardSound() {
+        if (!this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Grand finale sound for leaderboard
+            oscillator.frequency.setValueAtTime(261.63, this.audioContext.currentTime); // C4
+            oscillator.frequency.setValueAtTime(329.63, this.audioContext.currentTime + 0.1); // E4
+            oscillator.frequency.setValueAtTime(392, this.audioContext.currentTime + 0.2); // G4
+            oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime + 0.3); // C5
+            oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.4); // E5
+            oscillator.frequency.setValueAtTime(783.99, this.audioContext.currentTime + 0.5); // G5
+            
+            gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 1.2);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 1.2);
+        } catch (error) {
+            console.warn('Error playing leaderboard sound:', error);
+        }
+    }
+
     setupEventListeners() {
         // Setup form
         document.getElementById('startQuizBtn').addEventListener('click', () => this.startQuiz());
@@ -78,6 +186,7 @@ class QuizMaster {
         // Quiz controls
         document.getElementById('submitAnswerBtn').addEventListener('click', () => this.submitAnswer());
         document.getElementById('skipQuestionBtn').addEventListener('click', () => this.skipQuestion());
+        document.getElementById('goBackBtn').addEventListener('click', () => this.goBackQuestion());
         document.getElementById('nextQuestionBtn').addEventListener('click', () => this.nextQuestion());
         document.getElementById('startTimerBtn').addEventListener('click', () => this.startTimer());
         document.getElementById('startNextTeamBtn').addEventListener('click', () => this.startNextTeam());
@@ -394,6 +503,9 @@ class QuizMaster {
         this.updateTimerStyle();
         this.updateStartTimerButton();
         
+        // Update go back button state
+        this.updateGoBackButton();
+        
         // Don't auto-start timer - wait for manual start
     }
 
@@ -420,9 +532,23 @@ class QuizMaster {
         const question = currentTeamQuestions[this.currentQuestionIndex];
         const isCorrect = this.selectedAnswer === question.correctAnswer;
         
+        // Play appropriate sound
+        if (isCorrect) {
+            this.playCorrectAnswerSound();
+        } else {
+            this.playIncorrectAnswerSound();
+        }
+        
+        // Track the answer and score for this question
+        const questionKey = `${this.currentTeamIndex}-${this.currentQuestionIndex}`;
+        this.questionAnswers[questionKey] = this.selectedAnswer;
+        
         // Update score
         if (isCorrect) {
             this.scores[this.teams[this.currentTeamIndex]] += question.points;
+            this.questionScores[questionKey] = question.points;
+        } else {
+            this.questionScores[questionKey] = 0;
         }
         
         // Show answer feedback
@@ -489,6 +615,9 @@ class QuizMaster {
         const currentTeamScore = this.scores[currentTeam];
         const nextTeamIndex = this.currentTeamIndex + 1;
         
+        // Play team score sound
+        this.playTeamScoreSound();
+        
         // Update the transition screen
         document.getElementById('completedTeamName').textContent = currentTeam;
         document.getElementById('completedTeamScore').textContent = currentTeamScore;
@@ -516,6 +645,30 @@ class QuizMaster {
         this.updateCurrentTeamIndicator();
         this.updateLeaderboard();
         this.showQuizSection();
+        this.displayQuestion();
+    }
+
+    goBackQuestion() {
+        if (this.currentQuestionIndex === 0) return; // Can't go back from first question
+        
+        // Stop the timer
+        this.stopTimer();
+        
+        // Get the previous question key (the one we're going back to)
+        const previousQuestionKey = `${this.currentTeamIndex}-${this.currentQuestionIndex - 1}`;
+        
+        // If the previous question was answered correctly, remove its score
+        if (this.questionScores[previousQuestionKey] && this.questionScores[previousQuestionKey] > 0) {
+            this.scores[this.teams[this.currentTeamIndex]] -= this.questionScores[previousQuestionKey];
+        }
+        
+        // Move to previous question
+        this.currentQuestionIndex--;
+        
+        // Update leaderboard
+        this.updateLeaderboard();
+        
+        // Display the previous question
         this.displayQuestion();
     }
 
@@ -582,6 +735,10 @@ class QuizMaster {
 
     endQuiz() {
         this.isQuizActive = false;
+        
+        // Play leaderboard sound
+        this.playLeaderboardSound();
+        
         this.updateTeamIndicatorForResults();
         this.showResultsSection();
         this.displayFinalResults();
@@ -630,6 +787,8 @@ class QuizMaster {
         this.timerDuration = 30;
         this.timeLeft = 30;
         this.timerStarted = false;
+        this.questionAnswers = {};
+        this.questionScores = {};
         
         // Stop any running timer
         this.stopTimer();
@@ -665,6 +824,8 @@ class QuizMaster {
         this.timerDuration = 30;
         this.timeLeft = 30;
         this.timerStarted = false;
+        this.questionAnswers = {};
+        this.questionScores = {};
         
         // Clear form inputs
         document.getElementById('teamsDocUrl').value = '';
@@ -841,6 +1002,18 @@ class QuizMaster {
             } else {
                 startTimerBtn.disabled = false;
                 startTimerBtn.innerHTML = '<i class="fas fa-play"></i> Start Timer';
+            }
+        }
+    }
+
+    updateGoBackButton() {
+        const goBackBtn = document.getElementById('goBackBtn');
+        if (goBackBtn) {
+            // Disable go back button if this is the first question
+            if (this.currentQuestionIndex === 0) {
+                goBackBtn.disabled = true;
+            } else {
+                goBackBtn.disabled = false;
             }
         }
     }
